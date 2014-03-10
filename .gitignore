@@ -4,3 +4,120 @@
 *.jar
 *.war
 *.ear
+import Jama.Matrix;
+import.io.*;
+import java.util.*;
+import java.util.StringTokenizer;
+
+
+public class Bayesian {
+static ArrayList<Double> data=new ArrayList<Double>();
+static HashMap<String,Double> betaMap=new HashMap<String,Double>();
+static String url;
+static int M=9;
+
+static double alpha=0.0003;
+static double beta=0.89;
+
+public static Matrix Theta(double a){
+	double[][] thetaArray=new double[M+1][1];
+	for(int i=0;i<=M;i++){
+		thetaArray[i][0]=Math.pow(a, i);
+	}
+	Matrix theta=new Matrix(thetaArray);
+	return theta;
+	
+	
+}
+public static Matrix unitMatrix(int n){
+	double[][] unit=new double[n][n];
+	for(int i=0;i<n;i++){
+		unit[i][i]=1;
+	}
+	Matrix unitMatrix =new Matrix(unit);
+	return unitMatrix;
+}
+
+public static Matrix Sinverse(){
+	double[][] sumMatrix=new double[M+1][M+1];
+	Matrix sum=new Matrix(sumMatrix);
+	for(int i=0;i<data.size();i++){
+		sum=sum.plus(Theta((double)i+1).times(Theta((double)i+1).transpose()));
+	}
+	return unitMatrix(10).times(alpha).plus(sum.times(beta));
+	
+}
+public static Matrix getMx(double x){
+	double[][] sumMatrix=new double[M+1][1];
+	Matrix sum=new Matrix(sumMatrix);
+	for(int i=0;i<data.size();i++){
+		sum=sum.plus(Theta((double)i+1).times(data.get(i)));
+	}
+	return (Theta(x).times(beta).transpose()).times(Sinverse().inverse().times(sum));
+}
+public static double getResult(double x){
+	return getMx(x).get(0, 0);
+}
+public static void getData(String name) throws NumberFormatException, IOException{
+	File file=new File(name);
+	String temp;
+	BufferedReader reader = null;
+	try{
+		reader=new BufferedReader(new FileReader(file));
+		temp=reader.readLine();
+		while((temp=reader.readLine())!=null){
+			StringTokenizer str=new StringTokenizer(temp,",");
+			String symbol=str.nextToken();
+			String open=str.nextToken();
+			String high=str.nextToken();
+			String low=str.nextToken();
+			String close=str.nextToken();
+			data.add(Double.parseDouble(close));
+			
+		}
+	reader.close();
+	}catch(FileNotFoundException e){
+		e.printStackTrace();
+	}
+}
+public static double getBeta(String symbol){
+	betaMap.put("GOOG",0.89);
+	betaMap.put("MSFT", 0.71);
+	betaMap.put("YHOO", 1.12);
+	betaMap.put("GS", 1.96);
+	betaMap.put("GE", 1.2);
+	betaMap.put("CSCO", 1.27);
+	betaMap.put("AAPL", 0.74);
+	betaMap.put("IBM", 0.69);
+	betaMap.put("AIG", 1.37);
+	betaMap.put("AMZN", 0.77);
+	return betaMap.get(symbol);
+	
+}
+public static void setBeta(double b){
+	beta=b;
+}
+public static void main(String[] args) throws IOException{
+	/*
+	DownloadingStockInfo.readingUrlFile(DownloadingStockInfo.getHistory("GOOG", "2014", "0", "1", "2014", "1", "20", "d"), "GOOG");
+	DownloadingStockInfo.readingUrlFile(DownloadingStockInfo.getHistory("MSFT", "2014", "0", "1", "2014", "1", "20", "d"), "MSFT");
+	DownloadingStockInfo.readingUrlFile(DownloadingStockInfo.getHistory("GS", "2014", "0", "1", "2014", "1", "20", "d"), "GS");
+	DownloadingStockInfo.readingUrlFile(DownloadingStockInfo.getHistory("CSCO", "2014", "0", "1", "2014", "1", "20", "d"), "CSCO");
+	DownloadingStockInfo.readingUrlFile(DownloadingStockInfo.getHistory("AIG", "2014", "0", "1", "2014", "1", "20", "d"), "AIG");
+	DownloadingStockInfo.readingUrlFile(DownloadingStockInfo.getHistory("AAPL", "2014", "0", "1", "2014", "1", "20", "d"), "AAPL");
+	DownloadingStockInfo.readingUrlFile(DownloadingStockInfo.getHistory("YHOO", "2014", "0", "1", "2014", "1", "20", "d"), "YHOO");
+	DownloadingStockInfo.readingUrlFile(DownloadingStockInfo.getHistory("GE", "2014", "0", "1", "2014", "1", "20", "d"), "GE");
+	DownloadingStockInfo.readingUrlFile(DownloadingStockInfo.getHistory("IBM", "2014", "0", "1", "2014", "1", "20", "d"), "IBM");
+	DownloadingStockInfo.readingUrlFile(DownloadingStockInfo.getHistory("AMZN", "2014", "0", "1", "2014", "1", "20", "d"), "AMZN");
+	*/
+	String symbol="YHOO";
+	getData(symbol);
+	setBeta(getBeta(symbol));
+	int i=0;
+	for(i=0;i<data.size();i++){
+	System.out.println(i+1+":"+getResult(i+1));
+	}
+	System.out.println(i+1+":"+getResult(i+1));
+	System.out.println(i+2+":"+getResult(i+2));
+}
+}
